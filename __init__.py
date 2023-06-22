@@ -1,5 +1,6 @@
 import os, sys, json
 from functools import partial
+import file_management
 
 setting_root_directory = os.path.expanduser(os.path.join("~", "Documents"))
 
@@ -18,22 +19,8 @@ def make_sure_json_exists(filepath):
         make_sure_settings_folder_exists(_dir)
 
         with open(filepath, "w") as file:
-            file.write(json.dumps({}, index=4, sort_keys=True))
+            file.write(json.dumps({}))
 
-
-
-def get_setting_module(module_name):
-    # if
-    return
-
-def _read_settings(filepath):
-    with open(filepath, "w") as file:
-        _data = json.load(file)
-    return _data
-
-def _write_settings(filepath, settings_data):
-    with open(filepath, "w") as file:
-        file.write(json.dumps(settings_data))
 
 class SettingsForModule:
 
@@ -50,28 +37,40 @@ class SettingsForModule:
 
         make_sure_settings_folder_exists(self._root_folder)
 
-        _module_file_name = f"{module_name}_Settings.json"
+        _module_file_name = f"{module_name}.json"
         self.module_path = os.path.join(self._root_folder, _module_file_name)
 
-        make_sure_settings_folder_exists(self.module_folder_path)
-
-        self.settings_dictionary = _read_settings(self.module_path)
+        make_sure_json_exists(self.module_path)
 
     def get_setting(self, setting):
-        _setting_value = _read_settings(self.module_path).get(setting, None)
+        _setting_value = file_management.read_json(self.module_path).get(setting, None)
         return _setting_value
 
     def set_setting(self, setting, value):
-        self.settings_dictionary[setting] = value
-        _write_settings(self.module_path, self.settings_dictionary)
+        _write_dict = self.settings_dictionary()
+        _write_dict[setting] = value
+        file_management.write_json(self.settings_path(), _write_dict)
+
+    def remove_setting(self, setting):
+        _write_dict = self.settings_dictionary()
+        if setting in _write_dict:
+            del _write_dict[setting]
+            file_management.write_json(self.settings_path(), _write_dict)
+
+    def settings_dictionary(self):
+        return file_management.read_json(self.module_path)
+
+    def overwrite_with_dictionary(self, dictionary):
+        if isinstance(dictionary, dict):
+            file_management.write_json(self.module_path, dictionary)
 
     def settings_path(self):
         return self.module_path
 
     def settings_size(self):
-        return len(_read_settings(self.module_path))
+        return len(file_management.read_json(self.module_path))
 
     def print_settings(self):
-        print(_read_settings(self.module_path))
+        print(file_management.read_json(self.module_path))
 
 
